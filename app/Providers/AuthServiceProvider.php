@@ -3,6 +3,12 @@
 namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate;
+use App\Models\WasteReport;
+use App\Models\CarbonFootprint;
+use App\Models\FoodListing;
+use App\Policies\WasteReportPolicy;
+use App\Policies\CarbonFootprintPolicy;
+use App\Policies\FoodListingPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -13,7 +19,9 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
-        //
+        WasteReport::class => WasteReportPolicy::class,
+        CarbonFootprint::class => CarbonFootprintPolicy::class,
+        FoodListing::class => FoodListingPolicy::class,
     ];
 
     /**
@@ -21,6 +29,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $this->registerPolicies();
     }
 }

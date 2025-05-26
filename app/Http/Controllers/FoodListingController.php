@@ -12,9 +12,8 @@ class FoodListingController extends Controller
     {
         $listings = FoodListing::with('user')
             ->where('status', 'available')
-            ->where('expiry_date', '>', now())
             ->latest()
-            ->paginate(10);
+            ->paginate(12);
         return view('food-listings.index', compact('listings'));
     }
 
@@ -29,24 +28,25 @@ class FoodListingController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'quantity' => 'required|numeric|min:0',
-            'quantity_unit' => 'required|string|in:kg,pieces,boxes,containers',
+            'unit' => 'required|string|max:50',
+            'expiry_date' => 'required|date|after:today',
+            'image' => 'nullable|image|max:2048',
+            'special_instructions' => 'nullable|string',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'expiry_date' => 'required|date|after:now',
-            'image' => 'nullable|image|max:2048',
-            'special_instructions' => 'nullable|string'
+            'pickup_location' => 'required|string|max:255',
         ]);
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('food-listings', 'public');
-            $validated['image_path'] = $path;
+            $validated['image'] = $request->file('image')->store('food-listings', 'public');
         }
 
         $validated['user_id'] = Auth::id();
-        
-        FoodListing::create($validated);
+        $validated['status'] = 'available';
 
-        return redirect()->route('food-listings.index')
+        $listing = FoodListing::create($validated);
+
+        return redirect()->route('food-listings.show', $listing)
             ->with('success', 'Food listing created successfully.');
     }
 
@@ -55,23 +55,66 @@ class FoodListingController extends Controller
         return view('food-listings.show', compact('foodListing'));
     }
 
+    public function edit(FoodListing $foodListing)
+    {
+        $this->authorize('update', $foodListing);
+        return view('food-listings.edit', compact('foodListing'));
+    }
+
     public function update(Request $request, FoodListing $foodListing)
     {
+        $this->authorize('update', $foodListing);
+
         $validated = $request->validate([
-            'status' => 'required|string|in:available,reserved,collected'
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'quantity' => 'required|numeric|min:0',
+            'unit' => 'required|string|max:50',
+            'expiry_date' => 'required|date|after:today',
+            'image' => 'nullable|image|max:2048',
+            'special_instructions' => 'nullable|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'pickup_location' => 'required|string|max:255',
         ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('food-listings', 'public');
+        }
 
         $foodListing->update($validated);
 
         return redirect()->route('food-listings.show', $foodListing)
-            ->with('success', 'Food listing status updated successfully.');
+            ->with('success', 'Food listing updated successfully.');
+    }
+
+    public function destroy(FoodListing $foodListing)
+    {
+        $this->authorize('delete', $foodListing);
+        $foodListing->delete();
+
+        return redirect()->route('food-listings.index')
+            ->with('success', 'Food listing deleted successfully.');
     }
 
     public function myListings()
     {
         $listings = FoodListing::where('user_id', Auth::id())
             ->latest()
-            ->paginate(10);
+            ->paginate(12);
         return view('food-listings.my-listings', compact('listings'));
+    }
+
+    public function updateStatus(Request $request, FoodListing $foodListing)
+    {
+        $this->authorize('update', $foodListing);
+
+        $validated = $request->validate([
+            'status' => 'required|in:available,reserved,claimed',
+        ]);
+
+        $foodListing->update($validated);
+
+        return redirect()->back()->with('success', 'Status updated successfully.');
     }
 } 

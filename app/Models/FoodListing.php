@@ -14,18 +14,21 @@ class FoodListing extends Model
         'title',
         'description',
         'quantity',
-        'quantity_unit',
+        'unit',
+        'expiry_date',
+        'image',
+        'special_instructions',
         'latitude',
         'longitude',
-        'expiry_date',
+        'pickup_location',
         'status',
-        'image_path',
-        'special_instructions'
     ];
 
     protected $casts = [
+        'quantity' => 'float',
         'expiry_date' => 'datetime',
-        'quantity' => 'decimal:2'
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function user()
